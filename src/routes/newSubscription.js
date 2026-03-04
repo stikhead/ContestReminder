@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { addSubscription } from "../controllers/addSubscription.js";
+import { addSubscription } from "../src/controllers/addSubscription.js";
 
 router.post("/", addSubscription);
 
