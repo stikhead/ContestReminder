@@ -18,8 +18,16 @@ export const loginRateLimit = rateLimit({
 
 export const logoutRateLimit = rateLimit({
     windowMs:  15 * 60 * 1000,
-    limit: 2,
+    limit: 5,
     standardHeaders: true,
     legacyHeaders: false,
 	ipv6Subnet: 56,
 })
+
+export const contestFetchRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    limit: 60, 
+    standardHeaders: true,
+    legacyHeaders: false,
+    ipv6Subnet: 56,
+});

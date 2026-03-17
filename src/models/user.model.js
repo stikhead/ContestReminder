@@ -29,10 +29,16 @@ const userSchema = new mongoose.Schema({
     },
 
     verification: {
-        token: {
+        emailToken: {
             type: String,
         },
-        expiry: {
+        emailExpiry: {
+            type: Date
+        },
+        passwordToken: {
+            type: String,
+        },
+        passwordExpiry: {
             type: Date
         }
     },
