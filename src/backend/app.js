@@ -14,12 +14,23 @@ app.use(express.urlencoded({
     extended: true
 }))
 
-app.use(mongoSanitize());
 
 app.use(express.static("public"));
 
 app.use(cookieParser());
-
+app.use((req, res, next) => {
+  Object.defineProperty(req, 'query', {
+    value: { ...req.query },
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+  next();
+});
+app.use(mongoSanitize({
+  replaceWith: '_',
+  allowDots: true // This helps prevent some internal setter issues
+}));
 import userRouter from "./routes/user.route.js"
 import contestRouter from "./routes/contest.route.js";
 app.use('/api/v1/users', userRouter)

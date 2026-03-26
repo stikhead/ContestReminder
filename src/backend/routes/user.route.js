@@ -6,7 +6,7 @@ import { verifyJWT } from "../middleware/auth.middleware.js";
 const router = Router();
 
 router.route('/register').post(registerUser);
-router.route('/verify').get(verifyRateLimit, verifyUser);
+router.route('/verify').post(verifyRateLimit, verifyUser);
 router.route('/login').post(loginRateLimit, loginUser);
 router.route('/logout').post(logoutRateLimit, verifyJWT, logoutUser);
 router.route('/refresh').post(refresh);
