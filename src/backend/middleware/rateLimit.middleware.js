@@ -16,6 +16,14 @@ export const loginRateLimit = rateLimit({
 	ipv6Subnet: 56,
 })
 
+export const otpRateLimit = rateLimit({
+    windowMs:  60 * 1000,
+    limit: 1,
+    standardHeaders: true,
+    legacyHeaders: false,
+	ipv6Subnet: 56,
+})
+
 export const logoutRateLimit = rateLimit({
     windowMs:  15 * 60 * 1000,
     limit: 5,

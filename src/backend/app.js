@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 });
 app.use(mongoSanitize({
   replaceWith: '_',
-  allowDots: true // This helps prevent some internal setter issues
+  allowDots: true
 }));
 import userRouter from "./routes/user.route.js"
 import contestRouter from "./routes/contest.route.js";

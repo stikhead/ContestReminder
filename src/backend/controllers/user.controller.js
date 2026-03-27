@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { sendVerificationEmail } from "../services/email.service.js";
 import crypto from "crypto";
 import jwt from 'jsonwebtoken';
-
+import axios from 'axios';
 const generateAccessAndRefreshToken = async (user) => {
     const refreshToken = await user.generateRefreshToken();
     const accessToken = await user.generateAccessToken();
@@ -29,51 +29,84 @@ const generateVerificationToken = () => {
 
 const registerUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    console.log(email, password)
-    if (!email || !password) {
-        throw new ApiError(400, "all fields are required");
-    }
-    const normalizedEmail = email.trim().toLowerCase();
 
+    if (!email || !password) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
+    const currentTime = Date.now();
+    const cooldownMs = 60 * 1000;
+    const expiryMs = 15 * 60 * 1000;
+
     if (existingUser) {
-        throw new ApiError(409, "Email already in use");
+        if (existingUser.isVerified) {
+            throw new ApiError(409, "Email already in use");
+        }
+
+        if (existingUser.verification?.nextOtpAvailableAt && currentTime < existingUser.verification.nextOtpAvailableAt) {
+            const secondsLeft = Math.ceil((existingUser.verification.nextOtpAvailableAt - currentTime) / 1000);
+            throw new ApiError(429, `Please wait ${secondsLeft} seconds before requesting another code.`);
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const nextAvailable = currentTime + cooldownMs;
+
+        existingUser.password = password;
+        existingUser.verification = {
+            emailToken: otp,
+            emailExpiry: currentTime + expiryMs,
+            nextOtpAvailableAt: nextAvailable
+        };
+
+        await existingUser.save({ validateBeforeSave: true });
+
+        try {
+            await sendVerificationEmail(normalizedEmail, otp);
+        } catch (error) {
+            throw new ApiError(500, "User updated but failed to send email. Please try resending.");
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, {
+                email: normalizedEmail,
+                nextOtpAvailableAt: nextAvailable
+            }, "Verification email resent.")
+        );
     }
 
+    // NEW USER FLOW
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const nextAvailable = currentTime + cooldownMs;
+
     const user = await User.create({
         email: normalizedEmail,
         password: password,
         verification: {
             emailToken: otp,
-            emailExpiry: Date.now() + 15 * 60 * 1000
+            emailExpiry: currentTime + expiryMs,
+            nextOtpAvailableAt: nextAvailable
         }
-    })
+    });
 
     try {
-        const mail = await sendVerificationEmail(normalizedEmail, otp);
-        console.log(mail);
+        await sendVerificationEmail(normalizedEmail, otp);
     } catch (error) {
         await User.findByIdAndDelete(user._id);
-        throw new ApiError(500, `An Error occured while sending verification email ${error}`);
+        throw new ApiError(500, "Failed to send verification email. Please try again.");
     }
 
-    const createdUser = await User.findById(user._id).select(
-        "-password -refreshToken -verification"
-    )
+    const createdUser = await User.findById(user._id).select("-password -refreshToken -verification");
 
-    if (!createdUser) {
-        throw new ApiError(500, "Server Error");
-    }
-
-    return res
-        .status(201)
-        .json(
-            new ApiResponse(201, createdUser, "User registered successfully")
-        )
-
-})
+    return res.status(201).json(
+        new ApiResponse(201, {
+            user: createdUser,
+            nextOtpAvailableAt: nextAvailable
+        }, "User registered successfully. Please verify your email.")
+    );
+});
 
 const verifyUser = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
@@ -236,4 +269,199 @@ const refresh = asyncHandler(async (req, res) => {
         throw new ApiError(401, error?.message || "Invalid refresh token");
     }
 });
-export { registerUser, verifyUser, loginUser, logoutUser, refresh }
+
+const googleLogin = asyncHandler(async (req, res) => {
+    const { code } = req.body;
+
+    if (!code) {
+        throw new ApiError(
+            400, 'Google token is required'
+        )
+    }
+
+    let googleUser;
+    try {
+        const { data: tokens } = await axios.post(`${process.env.GOOGLE_OAUTH_URI}`, {
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            client_secret: process.env.GOOGLE_CLIENT_SECRET,
+            code: code,
+            grant_type: 'authorization_code',
+            redirect_uri: process.env.GOOGLE_REDIRECT_URI
+        });
+
+        const { access_token } = tokens;
+
+        const response = await axios.get(`${process.env.GOOGLE_VERIFICATION_URI}`, {
+            headers: { Authorization: `Bearer ${access_token}` }
+        });
+
+        googleUser = response.data;
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        throw new ApiError(401, "Google authentication failed");
+    }
+
+    let user = await User.findOne({ email: googleUser.email });
+
+    if (!user) {
+        const generatedPassword = generateVerificationToken();
+
+        user = await User.create({
+            email: googleUser.email,
+            password: generatedPassword,
+            isVerified: true,
+            name: googleUser.name
+        });
+    }
+
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(user);
+    return res
+        .status(200)
+        .cookie(
+            'accessToken', `${accessToken}`, {
+            httpOnly: true,
+            secure: true
+        }
+        )
+        .cookie(
+            'refreshToken', `${refreshToken}`, {
+            httpOnly: true,
+            secure: true
+        }
+        )
+        .json(
+            new ApiResponse(200, {
+                user: user,
+                accessToken: accessToken,
+                refreshToken: refreshToken
+            },
+                "User logged in successfullty")
+        )
+})
+
+const resendOtp = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        throw new ApiError(400, 'Email is required');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+        return res.status(200).json(
+            new ApiResponse(200, {}, "If an account exists, a new code has been sent.")
+        );
+    }
+
+    const currentTime = Date.now();
+    if (user.verification?.nextOtpAvailableAt && currentTime < user.verification.nextOtpAvailableAt) {
+        const secondsLeft = Math.ceil((user.verification.nextOtpAvailableAt - currentTime) / 1000);
+        throw new ApiError(429, `Please wait ${secondsLeft} seconds before requesting another code.`);
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const cooldownMs = 60 * 1000;
+    const nextAvailable = currentTime + cooldownMs;
+
+    if (user.isVerified) {
+        user.verification.passwordToken = otp;
+        user.verification.passwordExpiry = currentTime + (15 * 60 * 1000);
+    } else {
+        user.verification.emailToken = otp;
+        user.verification.emailExpiry = currentTime + (15 * 60 * 1000);
+    }
+
+    user.verification.nextOtpAvailableAt = nextAvailable;
+
+    await user.save({ validateBeforeSave: false });
+
+    try {
+        await sendVerificationEmail(normalizedEmail, otp);
+        console.log(`OTP Resent to ${normalizedEmail}: ${otp}`);
+    } catch (error) {
+        user.verification.emailToken = undefined;
+        user.verification.passwordToken = undefined;
+        user.verification.nextOtpAvailableAt = undefined;
+        await user.save({ validateBeforeSave: false });
+        throw new ApiError(500, `Failed to send email: ${error.message}`);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            nextOtpAvailableAt: nextAvailable
+        }, 'New verification code sent successfully')
+    );
+});
+
+const requestForgetPasswordOtp = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        throw new ApiError(400, "email is required");
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+        return res.status(200).json(
+            new ApiResponse(200, {}, 'OTP will be sent if user exists')
+        );
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    if (!user.verification) {
+        user.verification = {};
+    }
+
+    user.verification.passwordToken = otp;
+    user.verification.passwordExpiry = Date.now() + 15 * 60 * 1000;
+
+    await user.save({ validateBeforeSave: false });
+
+    try {
+        const mail = await sendVerificationEmail(normalizedEmail, otp);
+        console.log("Password Reset OTP Email sent:", mail);
+    } catch (error) {
+        user.verification.passwordToken = undefined;
+        await user.save({ validateBeforeSave: false });
+        throw new ApiError(500, `An error occurred while sending verification email: ${error}`);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, 'OTP sent successfully')
+    );
+});
+
+
+const verifyForgetPasswordOtpAndResetPassword = asyncHandler(async (req, res) => {
+    const { otp, email, newPassword } = req.body;
+
+    if (!otp || !email || !newPassword) {
+        throw new ApiError(400, "All fields (email, otp, newPassword) are required");
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+        email: normalizedEmail,
+        "verification.passwordToken": otp,
+        "verification.passwordExpiry": { $gt: Date.now() }
+    });
+
+    if (!user) {
+        throw new ApiError(400, 'Invalid or expired OTP');
+    }
+
+    user.password = newPassword; user.verification.passwordToken = undefined;
+    user.verification.passwordExpiry = undefined;
+    await user.save({ validateBeforeSave: true });
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Password reset successfully")
+    );
+});
+
+export { registerUser, verifyUser, resendOtp, verifyForgetPasswordOtpAndResetPassword, requestForgetPasswordOtp, googleLogin, loginUser, logoutUser, refresh }
