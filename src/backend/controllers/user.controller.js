@@ -7,7 +7,9 @@ import { sendVerificationEmail } from "../services/email.service.js";
 import crypto from "crypto";
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+
 const generateAccessAndRefreshToken = async (user) => {
+
     const refreshToken = await user.generateRefreshToken();
     const accessToken = await user.generateAccessToken();
 
@@ -27,6 +29,37 @@ const generateVerificationToken = () => {
     return verificationPayload
 }
 
+const isOtpAvailableAndGenerateOtp = async (user) => {
+    const currentTime = Date.now();
+
+
+    if (!user.verification) {
+        user.verification = {};
+    }
+
+    if (user.verification?.nextOtpAvailableAt && currentTime < user.verification.nextOtpAvailableAt) {
+        const secondsLeft = Math.ceil((user.verification.nextOtpAvailableAt - currentTime) / 1000);
+        throw new ApiError(429, `Please wait ${secondsLeft} seconds before requesting another code.`);
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const cooldownMs = 60 * 1000;
+    const expiryMs = 15 * 60 * 1000;
+    const nextAvailable = currentTime + cooldownMs;
+
+    if (user.isVerified) {
+        user.verification.passwordToken = otp;
+        user.verification.passwordExpiry = currentTime + expiryMs;
+    } else {
+        user.verification.emailToken = otp;
+        user.verification.emailExpiry = currentTime + expiryMs;
+    }
+
+    user.verification.nextOtpAvailableAt = nextAvailable;
+    return { nextAvailable, otp, user };
+
+}
+
 const registerUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
@@ -37,31 +70,18 @@ const registerUser = asyncHandler(async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
-    const currentTime = Date.now();
-    const cooldownMs = 60 * 1000;
-    const expiryMs = 15 * 60 * 1000;
 
     if (existingUser) {
         if (existingUser.isVerified) {
             throw new ApiError(409, "Email already in use");
         }
 
-        if (existingUser.verification?.nextOtpAvailableAt && currentTime < existingUser.verification.nextOtpAvailableAt) {
-            const secondsLeft = Math.ceil((existingUser.verification.nextOtpAvailableAt - currentTime) / 1000);
-            throw new ApiError(429, `Please wait ${secondsLeft} seconds before requesting another code.`);
-        }
+        const { nextAvailable, otp, user } = await isOtpAvailableAndGenerateOtp(existingUser)
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const nextAvailable = currentTime + cooldownMs;
+        user.password = password;
 
-        existingUser.password = password;
-        existingUser.verification = {
-            emailToken: otp,
-            emailExpiry: currentTime + expiryMs,
-            nextOtpAvailableAt: nextAvailable
-        };
 
-        await existingUser.save({ validateBeforeSave: true });
+        await user.save({ validateBeforeSave: true });
 
         try {
             await sendVerificationEmail(normalizedEmail, otp);
@@ -77,20 +97,14 @@ const registerUser = asyncHandler(async (req, res) => {
         );
     }
 
-    // NEW USER FLOW
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const nextAvailable = currentTime + cooldownMs;
 
-    const user = await User.create({
+    const newUser = await User.create({
         email: normalizedEmail,
         password: password,
-        verification: {
-            emailToken: otp,
-            emailExpiry: currentTime + expiryMs,
-            nextOtpAvailableAt: nextAvailable
-        }
     });
 
+    const { nextAvailable, otp, user } = await isOtpAvailableAndGenerateOtp(newUser)
+    user.save({ validateBeforeSave: false })
     try {
         await sendVerificationEmail(normalizedEmail, otp);
     } catch (error) {
@@ -162,6 +176,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     if (!user.isVerified) {
+
         throw new ApiError(403, "Please verify your email before logging in.");
     }
 
@@ -262,7 +277,10 @@ const refresh = asyncHandler(async (req, res) => {
             }
             )
             .json(
-                new ApiResponse(200, {}, "Tokens refreshed successfully")
+                new ApiResponse(200, {
+                    accessToken: accessToken,
+                    refreshToken: newRefreshToken
+                }, "Tokens refreshed successfully")
             )
 
     } catch (error) {
@@ -340,40 +358,22 @@ const googleLogin = asyncHandler(async (req, res) => {
         )
 })
 
-const resendOtp = asyncHandler(async (req, res) => {
+const sendOtp = asyncHandler(async (req, res) => {
     const { email } = req.body;
     if (!email) {
         throw new ApiError(400, 'Email is required');
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
-    if (!user) {
+    if (!existingUser) {
         return res.status(200).json(
-            new ApiResponse(200, {}, "If an account exists, a new code has been sent.")
+            new ApiResponse(200, {nextOtpAvailableAt: Date.now() + ( 60 * 1000)}, "If an account exists, a new code has been sent.")
         );
     }
 
-    const currentTime = Date.now();
-    if (user.verification?.nextOtpAvailableAt && currentTime < user.verification.nextOtpAvailableAt) {
-        const secondsLeft = Math.ceil((user.verification.nextOtpAvailableAt - currentTime) / 1000);
-        throw new ApiError(429, `Please wait ${secondsLeft} seconds before requesting another code.`);
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const cooldownMs = 60 * 1000;
-    const nextAvailable = currentTime + cooldownMs;
-
-    if (user.isVerified) {
-        user.verification.passwordToken = otp;
-        user.verification.passwordExpiry = currentTime + (15 * 60 * 1000);
-    } else {
-        user.verification.emailToken = otp;
-        user.verification.emailExpiry = currentTime + (15 * 60 * 1000);
-    }
-
-    user.verification.nextOtpAvailableAt = nextAvailable;
+    const { nextAvailable, otp, user } = await isOtpAvailableAndGenerateOtp(existingUser);
 
     await user.save({ validateBeforeSave: false });
 
@@ -381,8 +381,13 @@ const resendOtp = asyncHandler(async (req, res) => {
         await sendVerificationEmail(normalizedEmail, otp);
         console.log(`OTP Resent to ${normalizedEmail}: ${otp}`);
     } catch (error) {
-        user.verification.emailToken = undefined;
-        user.verification.passwordToken = undefined;
+        if (user.isVerified) {
+            user.verification.passwordToken = undefined;
+            user.verification.passwordExpiry = undefined;
+        } else {
+            user.verification.emailToken = undefined;
+            user.verification.emailExpiry = undefined;
+        }
         user.verification.nextOtpAvailableAt = undefined;
         await user.save({ validateBeforeSave: false });
         throw new ApiError(500, `Failed to send email: ${error.message}`);
@@ -391,47 +396,7 @@ const resendOtp = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new ApiResponse(200, {
             nextOtpAvailableAt: nextAvailable
-        }, 'New verification code sent successfully')
-    );
-});
-
-const requestForgetPasswordOtp = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    if (!email) {
-        throw new ApiError(400, "email is required");
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
-
-    if (!user) {
-        return res.status(200).json(
-            new ApiResponse(200, {}, 'OTP will be sent if user exists')
-        );
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    if (!user.verification) {
-        user.verification = {};
-    }
-
-    user.verification.passwordToken = otp;
-    user.verification.passwordExpiry = Date.now() + 15 * 60 * 1000;
-
-    await user.save({ validateBeforeSave: false });
-
-    try {
-        const mail = await sendVerificationEmail(normalizedEmail, otp);
-        console.log("Password Reset OTP Email sent:", mail);
-    } catch (error) {
-        user.verification.passwordToken = undefined;
-        await user.save({ validateBeforeSave: false });
-        throw new ApiError(500, `An error occurred while sending verification email: ${error}`);
-    }
-
-    return res.status(200).json(
-        new ApiResponse(200, {}, 'OTP sent successfully')
+        }, 'If an account exists, a new code has been sent.')
     );
 });
 
@@ -446,17 +411,34 @@ const verifyForgetPasswordOtpAndResetPassword = asyncHandler(async (req, res) =>
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await User.findOne({
-        email: normalizedEmail,
-        "verification.passwordToken": otp,
-        "verification.passwordExpiry": { $gt: Date.now() }
+        email: normalizedEmail
     });
 
     if (!user) {
         throw new ApiError(400, 'Invalid or expired OTP');
     }
 
-    user.password = newPassword; user.verification.passwordToken = undefined;
+    let validOtp;
+    if (user.isVerified) {
+        validOtp = user.verification?.passwordToken === otp && user.verification?.passwordExpiry > currentTime;
+    } else {
+        validOtp = user.verification?.emailToken === otp && user.verification?.emailExpiry > currentTime;
+
+    }
+
+    if (!validOtp) {
+        throw new ApiError(400, 'Invalid or expired OTP');
+    }
+
+
+    if (!user.isVerified) {
+        user.isVerified = true;
+    }
+
+    user.verification.passwordToken = undefined;
     user.verification.passwordExpiry = undefined;
+    user.verification.emailToken = undefined;
+    user.verification.emailExpiry = undefined;
     await user.save({ validateBeforeSave: true });
 
     return res.status(200).json(
@@ -464,4 +446,4 @@ const verifyForgetPasswordOtpAndResetPassword = asyncHandler(async (req, res) =>
     );
 });
 
-export { registerUser, verifyUser, resendOtp, verifyForgetPasswordOtpAndResetPassword, requestForgetPasswordOtp, googleLogin, loginUser, logoutUser, refresh }
+export { registerUser, verifyUser, sendOtp, verifyForgetPasswordOtpAndResetPassword, googleLogin, loginUser, logoutUser, refresh }

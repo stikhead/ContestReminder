@@ -2,8 +2,9 @@ import { ArrowLeft, MailCheck, ShieldAlert, AlertCircle, Loader2 } from "lucide-
 import { useState } from "react";
 import api from "../../../api/axios";
 import useAuth from "../../../context/AuthContext";
+import ResendOtpButton from "../Button/ResendOtpButton";
 
-export default function VerificationForm({ onBack, onVerifySuccess }) {
+export default function VerificationForm({ onBack, email, onVerifySuccess }) {
     const [otp, setOtp] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +26,7 @@ export default function VerificationForm({ onBack, onVerifySuccess }) {
                 otp: otp, 
                 email: data.pendingVerificationEmail 
             });
+
 
             const accessToken = response.data.accessToken || response.data.data?.accessToken;
             const refreshToken = response.data.refreshToken || response.data.data?.refreshToken;
@@ -66,12 +68,13 @@ export default function VerificationForm({ onBack, onVerifySuccess }) {
                 <h2 className="text-xl font-semibold text-white">Verify Email</h2>
             </div>
 
+          
             <div className="flex flex-col items-center mb-6 text-center">
                 <div className="flex items-center justify-center w-12 h-12 mb-4 bg-gray-800 rounded-full shadow-inner shadow-black/50">
                     <MailCheck className="w-6 h-6 text-green-400" />
                 </div>
                 <p className="text-sm text-gray-400">
-                    We sent a verification code to your email. Enter it below to activate your account.
+                    We sent a verification code to {email}. Enter it below to activate your account.
                 </p>
             </div>
 
@@ -116,14 +119,13 @@ export default function VerificationForm({ onBack, onVerifySuccess }) {
                     <span>{isLoading ? 'Verifying...' : 'Verify Account'}</span>
                 </button>
 
-                <button
-                    type="button"
-                    disabled={isLoading}
-                    className="mt-2 text-xs text-gray-500 transition-colors hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Didn't receive a code? <span className="text-green-400 underline underline-offset-2">Resend</span>
-                </button>
+            <ResendOtpButton
+                email={email}
+                isLoading={isLoading}
+            />
+                
             </form>
+
         </div>
     );
 }

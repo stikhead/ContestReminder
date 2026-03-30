@@ -31,7 +31,7 @@ api.interceptors.response.use((response) => {
             }); await chrome.storage.local.set({
                 accessToken: response.data.accessToken
             })
-            originalReq.headers.Authorization = `Bearer ${response.data.accessToken}`;
+            originalReq.headers.Authorization = `Bearer ${response.datadata.accessToken}`;
             return api(originalReq);
         } catch (error) {
             await chrome.storage.local.remove(['accessToken', 'refreshToken']);

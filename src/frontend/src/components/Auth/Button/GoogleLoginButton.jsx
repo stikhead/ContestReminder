@@ -1,11 +1,12 @@
 import api from "../../../api/axios";
 import useAuth from "../../../context/AuthContext";
 import react, { useState } from 'react'
-export default function GoogleButton({ onError, disabled, text = "Continue with Google"}) {
+export default function GoogleButton({ onError, disabled, set, text = "Continue with Google"}) {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const { onLogin, onLoginSuccess } = useAuth();  
     const handleClick = async () => {
         setIsGoogleLoading(true); 
+        set(true);
         
         const redirectUri = chrome.identity.getRedirectURL();
         const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -21,6 +22,7 @@ export default function GoogleButton({ onError, disabled, text = "Continue with 
             if (chrome.runtime.lastError || !responseUrl) {
                 console.error("Auth flow failed or user cancelled.", chrome.runtime.lastError);
                 setIsGoogleLoading(false); 
+                set(false)
                 return;
             }
 
@@ -48,6 +50,7 @@ export default function GoogleButton({ onError, disabled, text = "Continue with 
                 onError(backendMessage);
             } finally {
                 setIsGoogleLoading(false);
+                set(false);
             }
         });
     }
@@ -60,7 +63,7 @@ export default function GoogleButton({ onError, disabled, text = "Continue with 
         className={`flex items-center justify-center w-full gap-2 py-2.5 text-sm
                     font-medium text-white transition-all border border-gray-700 rounded-lg 
                     focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-950
-                    ${isGoogleLoading
+                    ${isGoogleLoading || disabled
                 ? 'bg-gray-800/50 cursor-not-allowed opacity-50'
                 : 'bg-gray-800 hover:bg-gray-700 active:scale-[0.98]  cursor-pointer'
             }`}

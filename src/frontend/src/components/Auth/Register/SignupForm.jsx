@@ -18,10 +18,10 @@ export default function SignupForm({ onBack, onSignupSuccess }) {
 
         try {
             const response = await api.post('/users/register', { email, password });
-            await chrome.storage.local.set({
-                pendingVerificationEmail: email
-            });
-            onSignupSuccess();
+            await chrome.storage.local.set({pendingVerificationEmail: email})
+            await chrome.storage.local.set({'nextOtpAvailableAt': response?.data?.data?.nextOtpAvailableAt});
+
+            onSignupSuccess(email);
         } catch (err) {
             console.error('An error occurred during signup', err);
             const backendMessage = err.response?.data?.message || "Signup failed. Please try again later.";
@@ -128,6 +128,7 @@ export default function SignupForm({ onBack, onSignupSuccess }) {
 
             <GoogleButton
                 disabled={isLoading}
+                set={setIsLoading}
                 onError={setErrorMsg}
                 text="Signup With Google"
             />

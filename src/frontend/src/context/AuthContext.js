@@ -5,8 +5,7 @@ export const AuthContext = React.createContext({
         isAuthenticated: false,
     },
     onLogin: ()=>{},
-    onLogout: ()=>{},
-    onLoginSuccess: ()=>{}
+    onLogout: ()=>{}
 });
 
 export const AuthProvider = AuthContext.Provider;

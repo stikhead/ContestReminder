@@ -4,12 +4,12 @@ import api from "../../../api/axios";
 import useAuth from "../../../context/AuthContext";
 import GoogleButton from "../Button/GoogleLoginButton";
 
-export default function LoginForm({ onBack, onForgotPasswordClick }) {
+export default function LoginForm({ onBack, onForgotPasswordClick, onSignupSuccess }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { onLogin, onLoginSuccess } = useAuth();
+    const { onLoginSuccess } = useAuth();
 
     const isFormIncomplete = !email.trim() || !password.trim();
 
@@ -22,7 +22,7 @@ export default function LoginForm({ onBack, onForgotPasswordClick }) {
             const response = await api.post('/users/login', { 'email': email, 'password': password })
             const accessToken = response.data.accessToken || response.data.data?.accessToken;
             const refreshToken = response.data.refreshToken || response.data.data?.refreshToken;
-            
+
 
             if (accessToken && refreshToken) {
                 await chrome.storage.local.remove('pendingVerificationEmail');
@@ -30,13 +30,26 @@ export default function LoginForm({ onBack, onForgotPasswordClick }) {
                     accessToken: `Bearer ${accessToken}`,
                     refreshToken: `Bearer ${refreshToken}`
                 })
-                onLogin();
                 onLoginSuccess();
             } else {
                 setErrorMsg("Invalid response from server. Missing tokens.");
             }
 
         } catch (err) {
+            if (err.response?.status === 403) {
+                await chrome.storage.local.get({ 'pendingVerificationEmail': email });
+                
+                try {
+                    const response = await api.post('/users/send-otp', { email });
+                    await chrome.storage.local.set({'nextOtpAvailableAt': response?.data?.data?.nextOtpAvailableAt});
+                } catch (otpErr) {
+                    console.error("Failed to auto-send OTP", otpErr);
+                }
+
+                onSignupSuccess(email);
+                return;
+
+            }
             console.error('An error occurred during login', err);
             const backendMessage = err.response?.data?.message || "Login failed. Please check your credentials.";
             setErrorMsg(backendMessage);
@@ -45,7 +58,7 @@ export default function LoginForm({ onBack, onForgotPasswordClick }) {
         }
     }
 
-  
+
     return (
         <div className="flex flex-col h-full w-full px-6 py-4 animate-in slide-in-from-right-8 duration-300">
 
@@ -61,7 +74,7 @@ export default function LoginForm({ onBack, onForgotPasswordClick }) {
             </div>
 
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                
+
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Email Address</label>
                     <div className="relative flex items-center">
@@ -117,8 +130,8 @@ export default function LoginForm({ onBack, onForgotPasswordClick }) {
                     className={`flex items-center justify-center w-full gap-2 py-2.5 mt-2 text-sm
                         font-semibold transition-all rounded-lg text-gray-900
                         focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-950 
-                        ${(isLoading || isFormIncomplete) 
-                            ? 'bg-green-400/50 cursor-not-allowed' 
+                        ${(isLoading || isFormIncomplete)
+                            ? 'bg-green-400/50 cursor-not-allowed'
                             : 'bg-green-400 shadow-lg hover:bg-green-300 active:scale-[0.98] cursor-pointer'
                         }`}
                 >
@@ -133,8 +146,9 @@ export default function LoginForm({ onBack, onForgotPasswordClick }) {
                 <div className="grow border-t border-gray-800"></div>
             </div>
 
-            <GoogleButton 
+            <GoogleButton
                 disabled={isLoading}
+                set={setIsLoading}
                 onError={setErrorMsg}
                 text="Continue With Google"
             />
