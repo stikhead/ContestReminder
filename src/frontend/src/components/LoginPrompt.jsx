@@ -15,16 +15,15 @@ export default function LoginPrompt({onLoginClick, onSignupClick}) {
         Login to sync upcoming schedules from Codeforces, LeetCode, and AtCoder, and manage your reminders.
       </p>
 
-      {/* FIXED: Added flex, items-center, justify-center, and gap-1 to align the icon and text */}
       <button
        onClick={onLoginClick}
-       className="flex items-center justify-center gap-1 mt-4 text-sm font-medium text-gray-400 transition-colors hover:text-white">
+       className="flex items-center justify-center gap-1 mt-4 text-sm font-medium text-gray-400  hover:cursor-pointer transition-colors hover:text-white">
         <LogInIcon className="w-4 h-4" />
         <span>Login to Account</span>
       </button>
 
       <button 
-       className="mt-4 text-xs text-gray-500 transition-colors hover:text-gray-300"
+       className="mt-4 text-xs text-gray-500 transition-colors hover:cursor-pointer hover:text-gray-300"
        onClick={onSignupClick}
        >
         Don't have an account? Sign up

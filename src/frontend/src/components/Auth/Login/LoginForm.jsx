@@ -27,8 +27,8 @@ export default function LoginForm({ onBack, onForgotPasswordClick, onSignupSucce
             if (accessToken && refreshToken) {
                 await chrome.storage.local.remove('pendingVerificationEmail');
                 await chrome.storage.local.set({
-                    accessToken: `Bearer ${accessToken}`,
-                    refreshToken: `Bearer ${refreshToken}`
+                    accessToken: `${accessToken}`,
+                    refreshToken: `${refreshToken}`
                 })
                 onLoginSuccess();
             } else {

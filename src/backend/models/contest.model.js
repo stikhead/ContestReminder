@@ -11,6 +11,9 @@ const contestSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+          type: String
+    },
     durationSeconds: {
         type: Number,
         required: true

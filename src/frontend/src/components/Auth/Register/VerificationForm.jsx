@@ -33,8 +33,8 @@ export default function VerificationForm({ onBack, email, onVerifySuccess }) {
 
             if (accessToken && refreshToken) {
                 await chrome.storage.local.set({
-                    accessToken: `Bearer ${accessToken}`,
-                    refreshToken: `Bearer ${refreshToken}`
+                    accessToken: `${accessToken}`,
+                    refreshToken: `${refreshToken}`
                 });
                 await chrome.storage.local.remove('pendingVerificationEmail');
                 

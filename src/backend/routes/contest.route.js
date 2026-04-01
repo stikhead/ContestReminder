@@ -5,8 +5,8 @@ import { contestFetchRateLimit } from "../middleware/rateLimit.middleware.js";
 
 const router = Router();
 
-router.route('/today').get(verifyJWT, contestFetchRateLimit, today);
-router.route('/upcoming').get(verifyJWT, contestFetchRateLimit, upcoming);
-router.route('/past').get(verifyJWT, contestFetchRateLimit, past);
+router.route('/today').get(verifyJWT , today);
+router.route('/upcoming').get(verifyJWT , upcoming);
+router.route('/past').get(verifyJWT, past);
 router.route('/toggle').post(verifyJWT, toggleReminder);
 export default router

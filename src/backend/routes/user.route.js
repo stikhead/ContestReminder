@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { googleLogin, loginUser, logoutUser, refresh, registerUser, sendOtp, verifyForgetPasswordOtpAndResetPassword, verifyUser } from "../controllers/user.controller.js";
+import { getUserProfile, googleLogin, loginUser, logoutUser, refresh, registerUser, sendOtp, updatePreferences, verifyForgetPasswordOtpAndResetPassword, verifyUser } from "../controllers/user.controller.js";
 import { verifyRateLimit, loginRateLimit, logoutRateLimit } from "../middleware/rateLimit.middleware.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -13,4 +13,6 @@ router.route('/refresh').post(refresh);
 router.route('/googleLogin').post(googleLogin);
 router.route('/forgot-password').post(verifyForgetPasswordOtpAndResetPassword);
 router.route('/send-otp').post(sendOtp);
+router.route("/profile").get(verifyJWT, getUserProfile);
+router.route("/preferences").patch(verifyJWT, updatePreferences);
 export default router

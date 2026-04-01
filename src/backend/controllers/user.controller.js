@@ -242,7 +242,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refresh = asyncHandler(async (req, res) => {
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-
+    console.log(refreshToken)
     if (!refreshToken) {
         throw new ApiError(401, "Unauthorized request");
     }
@@ -446,4 +446,42 @@ const verifyForgetPasswordOtpAndResetPassword = asyncHandler(async (req, res) =>
     );
 });
 
-export { registerUser, verifyUser, sendOtp, verifyForgetPasswordOtpAndResetPassword, googleLogin, loginUser, logoutUser, refresh }
+const getUserProfile = asyncHandler(async (req, res) => {
+    
+    const user = await User.findById(req.user?._id)
+        .populate("savedContests")
+        .select("-password -refreshToken");
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "User profile fetched successfully"));
+});
+
+const updatePreferences = asyncHandler(async (req, res) => {
+    const { contestPreference, reminderPreference } = req.body;
+
+       if (!contestPreference && !reminderPreference) {
+        throw new ApiError(400, "No preferences provided for update");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                contestPreference,
+                reminderPreference
+            }
+        },
+        { new: true, runValidators: true }
+    ).select("-password -refreshToken");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, updatedUser, "Preferences updated successfully"));
+});
+
+export { registerUser, updatePreferences, getUserProfile, verifyUser, sendOtp, verifyForgetPasswordOtpAndResetPassword, googleLogin, loginUser, logoutUser, refresh }

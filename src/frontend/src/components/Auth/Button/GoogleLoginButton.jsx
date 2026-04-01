@@ -35,8 +35,8 @@ export default function GoogleButton({ onError, disabled, set, text = "Continue 
                 if (accessToken && refreshToken) {
                     await chrome.storage.local.remove('pendingVerificationEmail');
                     await chrome.storage.local.set({
-                        accessToken: `Bearer ${accessToken}`,
-                        refreshToken: `Bearer ${refreshToken}`
+                        'accessToken': `${accessToken}`,
+                        'refreshToken': `${refreshToken}`
                     })
                     onLogin();
                     onLoginSuccess();

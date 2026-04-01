@@ -31,8 +31,11 @@ app.use(mongoSanitize({
   replaceWith: '_',
   allowDots: true
 }));
+
+// contestSyncToDatabase();
 import userRouter from "./routes/user.route.js"
 import contestRouter from "./routes/contest.route.js";
+import { contestSyncToDatabase } from "./services/contest.service.js";
 app.use('/api/v1/users', userRouter)
-app.use('/api/v1/contest', contestRouter)
+app.use('/api/v1/contests', contestRouter)
 export default app;

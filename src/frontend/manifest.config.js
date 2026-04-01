@@ -12,8 +12,13 @@ export default defineManifest({
     'sidePanel',
     'contentSettings',
     'storage',
-    'identity'
+    'identity',
+    "alarms",
+    "notifications",
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   action: {
     default_icon: {
       48: 'public/logo.png',

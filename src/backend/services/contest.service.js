@@ -26,12 +26,13 @@ const fetchUpcomingContests = async() => {
     //     return allowedPlatforms.includes(item.resource_id);
     //  })
      const formattedData = response?.data?.objects?.map(contest => {
-        const {duration, id, start, end, href, resource, resource_id} = contest;
+        const {duration, id, start, end, href, event, resource, resource_id} = contest;
         return {
             contestId: id,
             contestHost: convertHostNames(resource_id),
             contestDuration: duration,
             contestStart: start,
+            contestDescription: event,
             contestEnd: end,
             contestResource: resource,
             contestResourceId: resource_id,
@@ -63,6 +64,7 @@ const contestSyncToDatabase = async () => {
                         resource: c.contestResource, 
                         resource_id: c.contestResourceId,
                         eventLink: c.contestLink,  
+                        description: c.contestDescription,
                         startTime: c.contestStart,
                         endTime: c.contestEnd,
                         durationSeconds: c.contestDuration
