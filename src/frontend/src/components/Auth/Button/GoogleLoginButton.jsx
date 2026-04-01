@@ -3,7 +3,7 @@ import useAuth from "../../../context/AuthContext";
 import react, { useState } from 'react'
 export default function GoogleButton({ onError, disabled, set, text = "Continue with Google"}) {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-    const { onLogin, onLoginSuccess } = useAuth();  
+    const { onLogin } = useAuth();  
     const handleClick = async () => {
         setIsGoogleLoading(true); 
         set(true);
@@ -39,7 +39,6 @@ export default function GoogleButton({ onError, disabled, set, text = "Continue 
                         'refreshToken': `${refreshToken}`
                     })
                     onLogin();
-                    onLoginSuccess();
                 } else {
                     onError("Invalid response from server. Missing tokens.");
                 }

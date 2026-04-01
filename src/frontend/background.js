@@ -30,3 +30,10 @@ chrome.notifications.onButtonClicked.addListener(async (notifId, btnIdx) => {
     }
   }
 });
+
+chrome.notifications.onClosed.addListener((notificationId) => {
+  if (notificationId.startsWith('contest-')) {
+    chrome.storage.local.remove(notificationId);
+    console.log("Cleanup: Removed storage for", notificationId);
+  }
+});

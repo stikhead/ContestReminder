@@ -9,23 +9,6 @@ export default function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const triggerTestNotification = async () => {
-    const testId = `contest-test-${Date.now()}`;
-    
-    // 1. Save dummy data
-    await chrome.storage.local.set({ 
-        [testId]: { 
-            title: "Manual Test Contest", 
-            platform: "LeetCode", 
-            url: "https://leetcode.com" 
-        } 
-    });
-
-    // 2. Schedule alarm for 1 minute from now (Chrome's safe minimum)
-    chrome.alarms.create(testId, { when: Date.now() + 61000 });
-    
-    alert("Test alarm set! Keep the browser open; notification will appear in 60 seconds.");
-};
 
 
   useEffect(() => {
@@ -92,9 +75,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
- <button onClick={triggerTestNotification} className="text-[10px] text-yellow-500 border border-yellow-500/20 px-2 py-1 rounded">
-  Test Notif
-</button>
+
             <button 
               onClick={() => setShowSettings(true)}
               className="p-2 text-gray-400 transition-colors rounded-md hover:text-white hover:cursor-pointer hover:bg-white/5"
