@@ -26,9 +26,9 @@
 
 ## Preview
 
-| Calendar View | Saved Reminders |
-| :---: | :---: |
-| ![Calendar View](./assets/calendar_view.png) | ![Saved Reminders](./assets/saved_reminders.png) | ![Today List](./assets/today_list.png)
+| Calendar View | Saved Reminders | Notification | Today |
+| :---: | :---: | :---: | :---: |
+| ![Calendar View](https://cdn.discordapp.com/attachments/1063099685130215494/1489131485280866455/Screenshot_2026-04-02_101725.png?ex=69cf4d44&is=69cdfbc4&hm=70c338ae40511df17b7ae1e0dcba6b44e40622e9ac26f7866c4ef26f963f2d11&) | ![Saved Reminders](https://media.discordapp.net/attachments/1063099685130215494/1489131484999712779/Screenshot_2026-04-02_101701.png?ex=69cf4d44&is=69cdfbc4&hm=dab33156862cc6921fd6be25848d5d3fc4beca911879b0742a4f232505d29692&=&format=webp&quality=lossless&width=440&height=574) | ![Notification](https://media.discordapp.net/attachments/1063099685130215494/1489131485561880626/Screenshot_2026-04-02_104605.png?ex=69cf4d44&is=69cdfbc4&hm=28f2fe9a25f49931782cd57b7f5444d2292f5ed8a09f081bc2a9aa1653a2cd17&=&format=webp&quality=lossless&width=430&height=271) | ![Today](https://media.discordapp.net/attachments/1063099685130215494/1489131484689203353/Screenshot_2026-04-02_101640.png?ex=69cf4d44&is=69cdfbc4&hm=99d453c1dec8a6b86d67107126df94fae746f6e1dbeb931071203b587e90ece8&=&format=webp&quality=lossless&width=442&height=576) 
 
 --
 ## Installation (Manual Load)

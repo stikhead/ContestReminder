@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/cron/sync-contests",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
