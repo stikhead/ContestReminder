@@ -24,14 +24,20 @@ jobs:
         working-directory: ./src/frontend
         run: npm ci
 
+      - name: Debug File Structure
+        working-directory: ./src/frontend
+        run: |
+          echo "Checking directory structure..."
+          ls -R src/
+
       - name: Build extension
         working-directory: ./src/frontend
         run: npm run build
 
       - name: Zip the build folder
         run: |
-          cd src/frontend
-          zip -r ../../build.zip dist/*
+          cd src/frontend/dist
+          zip -r ../../../build.zip .
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
