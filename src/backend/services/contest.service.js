@@ -15,7 +15,6 @@ const convertHostNames = (id)=>{
 
 const fetchUpcomingContests = async() => {
    try {
-    console.log(`${process.env.CLIST_API_KEY}`)
      const response = await instance.get('/contest/', {
         params: {
             upcoming: true,
@@ -39,7 +38,6 @@ const fetchUpcomingContests = async() => {
             contestLink: href
         }
      })
-     console.log(formattedData);
      return formattedData;
    } catch (error) {
     console.error("Clist API Fetch Failed:", error.message);

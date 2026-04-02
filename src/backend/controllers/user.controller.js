@@ -127,7 +127,6 @@ const verifyUser = asyncHandler(async (req, res) => {
     if (!email || !otp) {
         throw new ApiError(400, "Email and OTP are required");
     }
-    console.log(otp)
     const user = await User.findOne({
         'email': email,
         "verification.emailToken": otp,
@@ -242,7 +241,6 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refresh = asyncHandler(async (req, res) => {
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-    console.log(refreshToken)
     if (!refreshToken) {
         throw new ApiError(401, "Unauthorized request");
     }
@@ -379,7 +377,7 @@ const sendOtp = asyncHandler(async (req, res) => {
 
     try {
         await sendVerificationEmail(normalizedEmail, otp);
-        console.log(`OTP Resent to ${normalizedEmail}: ${otp}`);
+        console.log(`OTP Resent to ${normalizedEmail}`);
     } catch (error) {
         if (user.isVerified) {
             user.verification.passwordToken = undefined;

@@ -16,7 +16,6 @@ const buildPlatformQuery = (plat) => {
        
         query.host = { $regex: new RegExp(`^${plat}$`, 'i') };
     }
-    console.log(query);
     return query;
 };
 

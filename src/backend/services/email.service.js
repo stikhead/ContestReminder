@@ -37,7 +37,6 @@ const mailjet = new Mailjet({
 
 const sendVerificationEmail = async (email, otp) => {
   try {
-    console.log( `${process.env.MJ_APIKEY_PUBLIC}`,`${process.env.MJ_APIKEY_PRIVATE}`)
     const request = await mailjet.post("send", { version: 'v3.1' }).request({
       Messages: [
         {
