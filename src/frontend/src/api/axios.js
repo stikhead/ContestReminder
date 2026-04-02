@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:8000/api/v1"
+    baseURL: "https://contest-reminder-sage.vercel.app/api/v1"
 });
 
 const refreshApi = axios.create({
-    baseURL: "http://localhost:8000/api/v1"
+    baseURL: "https://contest-reminder-sage.vercel.app/api/v1"
 });
 
 let isRefreshing = false;

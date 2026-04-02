@@ -11,19 +11,26 @@
 * **Extension API:** Chrome Alarms API, Chrome Notifications API, Chrome Storage
 * **Backend:** Node.js, Express.js
 * **Database:** MongoDB Atlas (Mongoose)
-* **Authentication:** JWT-based secure login with google oauth
+* **Authentication:** JWT-based secure login with Google OAuth
 
 ---
 
 ## Features
 
-* **Real-time Tracking:** Fetches live contest data from platforms such as Codeforces, LeetCode, AtCoder, , and CodeChef.
+* **Real-time Tracking:** Fetches live contest data from platforms such as Codeforces, LeetCode, AtCoder, and CodeChef.
 * **Custom Reminders:** Set system-level notifications for specific contests.
 * **Platform Filtering:** Toggle visibility for specific platforms based on user preference.
 * **Persistent Storage:** User preferences and notification settings are synced across devices via a custom backend.
 
 ---
 
+## Preview
+
+| Calendar View | Saved Reminders |
+| :---: | :---: |
+| ![Calendar View](./assets/calendar_view.png) | ![Saved Reminders](./assets/saved_reminders.png) | ![Today List](./assets/today_list.png)
+
+--
 ## Installation (Manual Load)
 
 Since the extension is currently in development mode, use the following steps to install it in your browser:
@@ -31,9 +38,10 @@ Since the extension is currently in development mode, use the following steps to
 ### 1.1 Quick Install (From Release)
 If you prefer not to build from source, follow these steps:
 1. Navigate to the **Releases** section on the right side of this GitHub repository.
-2. Download the `build.zip` from the latest release.
-3. Extract (unzip) the file to a folder on your local machine.
-4. Follow the **Load into Chrome** steps below.
+2. Download the `build.zip` file from the latest release.
+3. **Extract (unzip)** the `build.zip` file.
+4. If the resulting folder contains another zip file, **unzip** that as well to access the final build directory.
+5. Follow the **Load into Chrome** steps below.
 
 ### 1.2 Build from Source
 If you wish to modify the code or build it yourself:
@@ -44,15 +52,18 @@ If you wish to modify the code or build it yourself:
    \`\`\`
 2. Install dependencies and build:
    \`\`\`bash
+   cd src/frontend
    npm install
    npm run build
    \`\`\`
+
+---
 
 ### 2. Load into Chrome
 1. Open Chrome and navigate to \`chrome://extensions/\`.
 2. Enable **Developer mode** using the toggle in the top-right corner.
 3. Click the **Load unpacked** button.
-4. Navigate to your project directory and select the **dist** folder.
+4. Navigate to your project directory and select the **dist** folder (or the folder extracted in Step 1.1).
 
 ---
 

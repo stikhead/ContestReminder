@@ -26,10 +26,6 @@ export default defineManifest({
     },
     default_popup: 'src/popup/index.html',
   },
-  content_scripts: [{
-    js: ['src/content/main.jsx'],
-    matches: ['https://*/*'],
-  }],
   side_panel: {
     default_path: 'src/sidepanel/index.html',
   },

@@ -6,6 +6,9 @@ on:
       - main 
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,3 +47,16 @@ jobs:
         with:
           name: contest-reminder-build
           path: build.zip
+
+      - name: Update Latest Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Development Build"
+          body: "Automated build for ContestReminder. Last updated: ${{ github.event.head_commit.timestamp }}"
+          draft: false
+          prerelease: true
+          files: build.zip
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
