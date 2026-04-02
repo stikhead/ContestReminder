@@ -5,6 +5,9 @@ export default defineManifest({
   manifest_version: 3,
   name: pkg.name,
   key: 'fjcmmoenaeelfelnpoeflbligkglkdpm',
+  "host_permissions": [
+    "https://https://contest-reminder-sage.vercel.app/*"
+  ],
   version: pkg.version,
   icons: {
     48: 'public/logo.png',
