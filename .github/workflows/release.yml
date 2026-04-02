@@ -1,11 +1,13 @@
-name: Upload Extension Build
+name: Build Extension on Commit
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main 
+  workflow_dispatch:
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,7 +18,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: ./src/frontend/package-lock.json
+          cache-dependency-path: ./src/fontend/package-lock.json
 
       - name: Install dependencies
         working-directory: ./src/frontend
@@ -27,14 +29,12 @@ jobs:
         run: npm run build
 
       - name: Zip the build folder
-      
         run: |
-          cd src/frontend
+          cd src/Frontend
           zip -r ../../build.zip dist/*
 
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: build.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: contest-reminder-build
+          path: build.zip
