@@ -46,21 +46,21 @@ If you prefer not to build from source, follow these steps:
 ### 1.2 Build from Source
 If you wish to modify the code or build it yourself:
 1. Clone the repository:
-   \`\`\`bash
-   git clone https://github.com/your-username/contest-reminder.git
+   ```bash
+   git clone https://github.com/stikhead/ContestReminder.git
    cd contest-reminder
-   \`\`\`
+   ```
 2. Install dependencies and build:
-   \`\`\`bash
+   ```bash
    cd src/frontend
    npm install
    npm run build
-   \`\`\`
+   ```
 
 ---
 
 ### 2. Load into Chrome
-1. Open Chrome and navigate to \`chrome://extensions/\`.
+1. Open Chrome and navigate to `chrome://extensions/`.
 2. Enable **Developer mode** using the toggle in the top-right corner.
 3. Click the **Load unpacked** button.
 4. Navigate to your project directory and select the **dist** folder (or the folder extracted in Step 1.1).
