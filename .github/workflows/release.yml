@@ -30,7 +30,7 @@ jobs:
 
       - name: Zip the build folder
         run: |
-          cd src/Frontend
+          cd src/frontend
           zip -r ../../build.zip dist/*
 
       - name: Upload Build Artifact
