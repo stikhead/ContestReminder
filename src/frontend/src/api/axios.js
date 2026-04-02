@@ -21,7 +21,6 @@ const processQueue = (error, token = null) => {
     });
     failedQueue = [];
 };
-// -----------------------------
 
 api.interceptors.request.use(async (config) => {
     const result = await chrome.storage.local.get('accessToken');

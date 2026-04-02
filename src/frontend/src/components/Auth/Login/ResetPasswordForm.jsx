@@ -73,6 +73,7 @@ export default function ResetPasswordForm({ onBack, onResetSuccess, email, timer
                 <form className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4" onSubmit={handleResetPassword}>
                     <p className="text-sm text-gray-400 mb-2">
                         We've sent a code to <span className="text-white font-medium">{email}</span>.
+                        If you don't see the email, please check your spam box!
                     </p>
 
                     <div className="space-y-1">
