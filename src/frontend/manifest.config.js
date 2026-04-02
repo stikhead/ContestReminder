@@ -6,7 +6,7 @@ export default defineManifest({
   name: pkg.name,
   key: 'fjcmmoenaeelfelnpoeflbligkglkdpm',
   "host_permissions": [
-    "https://https://contest-reminder-sage.vercel.app/*"
+    "https://contest-reminder-sage.vercel.app/*"
   ],
   version: pkg.version,
   icons: {
