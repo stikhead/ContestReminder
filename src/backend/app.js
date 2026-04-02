@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser"
 import mongoSanitize from "express-mongo-sanitize";
+import connectDB from "./database/database.js";
 const app = express();
 app.use(async (req, res, next) => {
     try {
